@@ -8,17 +8,18 @@
             [hello-world-reframe.bootstrap :as bs]))
 
 
-(defn- spielerbutton [index name states toggles dispatch-key ]
-  (let [active (get states index)
-        toggleable (get toggles index)]
+(defn- spielerbutton [index name active toggleable dispatch-key ]
+    (println index "->" dispatch-key)
     [bs/button {:key index :bsStyle (if active "primary" "default") :disabled (not toggleable)
-                :onClick #(dispatch [dispatch-key index])} name]))
+                :onClick #(dispatch [dispatch-key index])} name])
 
 (defn- spielerbuttons [label spieler states toggles dispatch-key]
+  (letfn [(create-button [index name]
+          ^{:key index}[spielerbutton index name (states index) (toggles index) dispatch-key])]
   [:div.form-group
    [:label label]
    [bs/button-toolbar
-    (map-indexed #(spielerbutton %1 %2 states toggles dispatch-key) spieler)]])
+    (map-indexed create-button spieler)]]))
 
 (defn- spieleingabe [spieler spieleingabe mit-aussetzer]
   [:div
@@ -55,4 +56,6 @@
     spieleeingabe)
 
   (get-in {:a [0 1 2]} [:a 1])
+
+  ([1 2 3] 0)
 )

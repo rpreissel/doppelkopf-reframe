@@ -63,20 +63,20 @@
   )
 
 (defn toggle-gewinner [db spieler]
-  (let [toggleable (get-in db [:spieleingabe :toggleGewinner spieler])]
-    (when toggleable
-      (-> db
-          (update-in [:spieleingabe :gewinner spieler] not)
-          (update-aussetzer-toggle-und-abrechenbar-state))
-    )))
+  (when-let [toggleable (get-in db [:spieleingabe :toggleGewinner spieler])]
+    (-> db
+        (update-in [:spieleingabe :gewinner spieler] not)
+        (update-aussetzer-toggle-und-abrechenbar-state))
+    ))
 
 (defn toggle-aussetzer [db spieler]
-  (let [toggleable (get-in db [:spieleingabe :toggleAussetzer spieler])]
-    (when toggleable
+  (when-let [toggleable (get-in db [:spieleingabe :toggleAussetzer spieler])]
+    (let [aussetzer (get-in db [:spieleingabe :aussetzer])
+          aussetzer-korrigiert (map-indexed #(and (= %1 spieler) (not %2)) aussetzer) ]
       (-> db
-          (assoc-in [:spieleingabe :aussetzer] (map #(= %1 spieler) (range 5)))
+          (assoc-in [:spieleingabe :aussetzer] (vec aussetzer-korrigiert))
           (update-aussetzer-toggle-und-abrechenbar-state))
-    )))
+      )))
 
 (register-handler
   :init-db

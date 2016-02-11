@@ -1,0 +1,36 @@
+/* some style */
+html {
+	/* Ensure the html element always takes up the full height of the browser window */
+	min-height: 100%;
+
+	/* The Magic */
+	background-size: cover;
+}
+
+body {
+	font-family: 'PT Sans', sans-serif;
+
+	margin-top: 18px;
+}
+
+
+.player-label {
+	margin-right: 5px;
+}
+
+.player-input {
+	margin-right: 15px;
+}
+
+div.row div.btn-toolbar {
+	margin-top: 15px;
+}
+
+.gewinner {
+	color: forestgreen;
+}
+
+.verlierer {
+	color: red;
+}
+

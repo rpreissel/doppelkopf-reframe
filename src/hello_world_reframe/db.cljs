@@ -37,11 +37,13 @@
 
 (defn toggle-fuenf-spieler-modus [db fuenfspieler]
   (let [fuenfspielerdb (get-in db [:spieler :fuenf])]
-    (when-not (= fuenfspieler fuenfspielerdb)
+    (if-not (= fuenfspieler fuenfspielerdb)
       (-> db
           (assoc-in [:spieler :fuenf] fuenfspieler)
           (assoc :spieleingabe (if fuenfspieler initialStateFuenfSpieler initialStateVierSpieler))
-    ))))
+          )
+      db
+      )))
 
 
 (defn update-aussetzer-toggle-und-abrechenbar-state [db]
@@ -54,29 +56,42 @@
         toggleaussetzer-korrigiert (map #(and fuenfspieler (not %1)) gewinner)
         aussetzer-vorhanden (some identity aussetzer-korrigiert)
         abrechenbar (and (> anzahlgewinner 0) (or (not fuenfspieler) aussetzer-vorhanden))]
-     (-> db
-          (assoc-in [:spieleingabe  :aussetzer] (vec aussetzer-korrigiert))
-          (assoc-in [:spieleingabe  :toggleGewinner] (vec togglegewinner-korrigiert))
-          (assoc-in [:spieleingabe  :toggleAussetzer] (vec toggleaussetzer-korrigiert))
-          (assoc-in [:spieleingabe  :abrechenbar] (not (nil? abrechenbar))))
+    (-> db
+        (assoc-in [:spieleingabe  :aussetzer] (vec aussetzer-korrigiert))
+        (assoc-in [:spieleingabe  :toggleGewinner] (vec togglegewinner-korrigiert))
+        (assoc-in [:spieleingabe  :toggleAussetzer] (vec toggleaussetzer-korrigiert))
+        (assoc-in [:spieleingabe  :abrechenbar] (not (nil? abrechenbar))))
     )
   )
 
 (defn toggle-gewinner [db spieler]
-  (when-let [toggleable (get-in db [:spieleingabe :toggleGewinner spieler])]
+  (if-let [toggleable (get-in db [:spieleingabe :toggleGewinner spieler])]
     (-> db
         (update-in [:spieleingabe :gewinner spieler] not)
         (update-aussetzer-toggle-und-abrechenbar-state))
-    ))
+    db))
 
 (defn toggle-aussetzer [db spieler]
-  (when-let [toggleable (get-in db [:spieleingabe :toggleAussetzer spieler])]
+  (if-let [toggleable (get-in db [:spieleingabe :toggleAussetzer spieler])]
     (let [aussetzer (get-in db [:spieleingabe :aussetzer])
           aussetzer-korrigiert (map-indexed #(and (= %1 spieler) (not %2)) aussetzer) ]
       (-> db
           (assoc-in [:spieleingabe :aussetzer] (vec aussetzer-korrigiert))
-          (update-aussetzer-toggle-und-abrechenbar-state))
-      )))
+          (update-aussetzer-toggle-und-abrechenbar-state)))
+    db))
+
+(defn add-bockrunde [db]
+  (update-in db [:spieleingabe :bockrunden] inc))
+
+(defn reset-bockrunden [db]
+  (assoc-in db [:spieleingabe :bockrunden] 0))
+
+
+(defn set-spielwert [db value]
+  (let [parsed-value (if (= value "") 0 (js/parseInt value))]
+    (if (and (number? parsed-value) (not (js/isNaN parsed-value)))
+      (assoc-in db [:spieleingabe :spielwert] parsed-value)
+      db)))
 
 (register-handler
   :init-db
@@ -103,6 +118,24 @@
   :toggle-aussetzer
   (fn [db [_ spieler]]
     (toggle-aussetzer db spieler)))
+
+
+(register-handler
+  :add-bockrunde
+  (fn [db _]
+    (add-bockrunde db)))
+
+(register-handler
+  :reset-bockrunden
+  (fn [db _]
+    (reset-bockrunden db)))
+
+(register-handler
+  :set-spielwert
+  (fn [db [_ value]]
+    (println "Spielwert:" value)
+    (set-spielwert db value)))
+
 
 
 (register-sub

@@ -44,8 +44,7 @@
           (assoc-in [:spieler :fuenf] fuenfspieler)
           (assoc :spieleingabe (if fuenfspieler initialStateFuenfSpieler initialStateVierSpieler))
           )
-      db
-      )))
+      db)))
 
 
 (defn update-aussetzer-toggle-und-abrechenbar-state [db]
@@ -63,8 +62,7 @@
         (assoc-in [:spieleingabe  :toggleGewinner] (vec togglegewinner-korrigiert))
         (assoc-in [:spieleingabe  :toggleAussetzer] (vec toggleaussetzer-korrigiert))
         (assoc-in [:spieleingabe  :abrechenbar] (not (nil? abrechenbar))))
-    )
-  )
+    ))
 
 (defn toggle-gewinner [db spieler]
   (if-let [toggleable (get-in db [:spieleingabe :toggleGewinner spieler])]
@@ -153,8 +151,7 @@
     :toggleAussetzer [true true true true true],
     :spielwert       (:spielwert s),
     :abrechenbar     true,
-    :bockrunden      (:bockrunden s)}
-  )
+    :bockrunden      (:bockrunden s)})
 
 (defn spiel-abrechnen [db]
   (let [spieleingabe                  (:spieleingabe db)

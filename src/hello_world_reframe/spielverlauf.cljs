@@ -8,13 +8,10 @@
             [hello-world-reframe.bootstrap :as bs]))
 
 
-(defn- spielerbutton [index name active toggleable dispatch-key ]
-  [bs/button {:key index :bsStyle (if active "primary" "default") :disabled (not toggleable)
-              :onClick #(dispatch [dispatch-key index])} name])
-
 (defn- spielerbuttons [label spieler states toggles dispatch-key]
   (let [create-button (fn [index name]
-                        ^{:key index}[spielerbutton index name (states index) (toggles index) dispatch-key])]
+                        [bs/button { :key index :bsStyle (if (states index) "primary" "default") :disabled (not (toggles index))
+                                     :onClick #(dispatch [dispatch-key index])} name])]
     [:div.form-group
      [:label label]
      [bs/button-toolbar
@@ -45,9 +42,8 @@
        (map create-button (range 1 9))]]]))
 
 (defn- spielabrechnen [abrechenbar]
-  [:div
    [bs/button-toolbar
-    [bs/button {:bsStyle "primary" :disabled (not abrechenbar) :onClick #(dispatch [:spiel-abrechnen])} "Spiel abrechnen"]]])
+    [bs/button {:bsStyle "primary" :disabled (not abrechenbar) :onClick #(dispatch [:spiel-abrechnen])} "Spiel abrechnen"]])
 
 
 
@@ -58,8 +54,7 @@
      [spielerbuttons "Aussetzer" spieler (:aussetzer spieleingabe) (:toggleAussetzer spieleingabe) :toggle-aussetzer])
    [bockrunden (:bockrunden spieleingabe)]
    [spielwert (:spielwert spieleingabe)]
-   [spielabrechnen (:abrechenbar spieleingabe)]
-   ])
+   [spielabrechnen (:abrechenbar spieleingabe)]])
 
 (defn- ergebnistabelle [spieler spielstand]
   (letfn [(create-row [index row]
@@ -71,15 +66,14 @@
                                        (contains? (:gewinner row) index) "gewinner"
                                        (contains? (:aussetzer row) index) ""
                                        :else "verlierer")]
-                           [:td.text-center {:key index :class style} value]))]
+                           [:td {:key index :class style} value]))]
     [bs/table {:striped true :bordered true :condensed true :responsive true}
      [:thead
       [:tr
        [:th.text-center "Nr."]
        (map-indexed #(identity [:th.text-center {:key %1} %2]) spieler)]]
      [:tbody
-      (map-indexed create-row spielstand)]
-     ]))
+      (map-indexed create-row spielstand)]]))
 
 
 (defn spielverlauf

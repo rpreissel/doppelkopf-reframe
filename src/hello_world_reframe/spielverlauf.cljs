@@ -61,22 +61,44 @@
    [spielabrechnen (:abrechenbar spieleingabe)]
    ])
 
+(defn- ergebnistabelle [spieler spielstand]
+  (letfn [(create-row [index row]
+                      [:tr.text-center {:key index}
+                       [:td (inc index)]
+                       (map-indexed #(create-column %1 %2 row) (:punkte row))])
+          (create-column [index value row]
+                         (let [style (cond
+                                       (contains? (:gewinner row) index) "gewinner"
+                                       (contains? (:aussetzer row) index) ""
+                                       :else "verlierer")]
+                           [:td.text-center {:key index :class style} value]))]
+    [bs/table {:striped true :bordered true :condensed true :responsive true}
+     [:thead
+      [:tr
+       [:th.text-center "Nr."]
+       (map-indexed #(identity [:th.text-center {:key %1} %2]) spieler)]]
+     [:tbody
+      (map-indexed create-row spielstand)]
+     ]))
+
+
 (defn spielverlauf
   []
   (let [spieler-names-rx (subscribe [:spieler-names])
         spieleingabe-rx (subscribe [:spieleingabe])
-        aktuelle-bockrunden-rx (subscribe [:aktuelle-bockrunden])]
+        aktuelle-bockrunden-rx (subscribe [:aktuelle-bockrunden])
+        spielstand-rx (subscribe [:spielstand])]
     (fn []
       (let [mit-aussetzer (some identity (:toggleAussetzer @spieleingabe-rx))
             [doppelbockspiele bockspiele] @aktuelle-bockrunden-rx
             eingabe-titel (cond
-                           (> doppelbockspiele 0) (str "Eingabe (" doppelbockspiele " Doppelbock- / " bockspiele " Bockspiele)")
-                           (> bockspiele 0) (str "Eingabe ("  bockspiele " Bockspiele)")
-                           :else "Eingabe")
+                            (> doppelbockspiele 0) (str "Eingabe (" doppelbockspiele " Doppelbock- / " bockspiele " Bockspiele)")
+                            (> bockspiele 0) (str "Eingabe ("  bockspiele " Bockspiele)")
+                            :else "Eingabe")
             eingabe-style (cond
-                           (> doppelbockspiele 0) "danger"
-                           (> bockspiele 0) "warning"
-                           :else "info")]
+                            (> doppelbockspiele 0) "danger"
+                            (> bockspiele 0) "warning"
+                            :else "info")]
         [:div
          [bs/panel {:header (as-element [:h3 "Aktionen"]) :bsStyle "info"}
           [bs/button-toolbar
@@ -85,6 +107,9 @@
            ]]
          [bs/panel {:header (as-element [:h3 eingabe-titel]) :bsStyle eingabe-style}
           [:div [spieleingabe @spieler-names-rx @spieleingabe-rx mit-aussetzer]]
+          ]
+         [bs/panel {:header (as-element [:h3 "Spielverlauf"]) :bsStyle "info"}
+          [:div [ergebnistabelle @spieler-names-rx @spielstand-rx]]
           ]
          ]
         )

@@ -12,7 +12,7 @@
 (def initialStateVierSpieler
   {:gewinner        [false false false false false],
    :toggleGewinner  [true true true true false],
-   :aussetzer       [false false false false false],
+   :aussetzer       [false false false false true],
    :toggleAussetzer [false false false false false],
    :spielwert       0,
    :abrechenbar     false,
@@ -103,32 +103,74 @@
   (let [last-spiel (vlast (:spiele db))]
     (if last-spiel (:aktuelle-bockrunden last-spiel) [0 0])))
 
-(defn spiel-abrechnen [db]
-  (let [fuenfspieler (get-in db [:spieler :fuenf])
-        gewinner-flags (get-in db [:spieleingabe :gewinner])
-        aussetzer-flags (get-in db [:spieleingabe :aussetzer])
-        gewinner (set (keep-indexed #(if %2 %1) gewinner-flags))
-        aussetzer (set (keep-indexed #(if %2 %1) aussetzer-flags))
-        verlierer (set/difference (set (range 5)) gewinner aussetzer)
-        anzahlgewinner (count gewinner)
-        anzahlverlierer (count verlierer)
-        punktzahl (get-in db [:spieleingabe :spielwert])
-        gewinnerpunkte (if (= anzahlgewinner 1) (* 3 punktzahl) punktzahl)
-        verliererpunkte (- 0 (/ (* gewinnerpunkte anzahlgewinner) anzahlverlierer))
-        punkte (vec (map #(cond
-                       (contains? gewinner %) gewinnerpunkte
-                       (contains? verlierer %) verliererpunkte
-                       :else 0) (range 5)))
-        neues-spiel {:gewinner gewinner
-                     :aussetzer aussetzer
-                     :spielwert punktzahl
-                     :punkte punkte}]
-      (println gewinnerpunkte)
-      (println verliererpunkte)
+(defn- berechne-neue-bockrunden [[bis-doppel bis-einzel] neue-bockrunden fuenf solospiel]
+  (let [[basis-doppel basis-einzel] (if solospiel
+                                      [bis-doppel bis-einzel]
+                                      (if (> 0 bis-doppel)
+                                        [(dec bis-doppel) bis-einzel]
+                                        (if (> 0 bis-einzel)
+                                          [0 (dec bis-einzel)]
+                                          [0 0])))
 
-      (-> db
-          (update :spiele conj neues-spiel)
-          (assoc :spieleingabe (if fuenfspieler initialStateFuenfSpieler initialStateVierSpieler)))))
+        bockrunde1 (+ basis-doppel basis-einzel)
+        bockrunde2 basis-doppel
+        anzahl-bockrunden (if fuenf 5 4)
+        doppel (* (quot neue-bockrunden 2) anzahl-bockrunden)
+        einzel (* (rem neue-bockrunden 2) anzahl-bockrunden)
+        neu-bockrunde1 (+ bockrunde1 (+ doppel (if (<= bockrunde1 bockrunde2) einzel 0)))
+        neu-bockrunde2 (+ bockrunde2 (+ doppel (if-not (<= bockrunde1 bockrunde2) einzel 0)))]
+    (if (> neu-bockrunde1 neu-bockrunde2)
+      [neu-bockrunde2 (- neu-bockrunde1 neu-bockrunde2)]
+      [neu-bockrunde1 (- neu-bockrunde2 neu-bockrunde1)])))
+
+(defn- spieleingabe->spiel [e]
+  (let [gewinner-flags    (:gewinner e)
+        aussetzer-flags   (:aussetzer e)
+        gewinner          (set (keep-indexed #(if %2 %1) gewinner-flags))
+        aussetzer         (set (keep-indexed #(if %2 %1) aussetzer-flags))
+        verlierer         (set/difference (set (range 5)) gewinner aussetzer)
+        anzahlgewinner    (count gewinner)
+        anzahlverlierer   (count verlierer)
+        punktzahl         (:spielwert e)
+        gewinnerpunkte    (if (= anzahlgewinner 1) (* 3 punktzahl) punktzahl)
+        verliererpunkte   (- 0 (/ (* gewinnerpunkte anzahlgewinner) anzahlverlierer))
+        punkte            (vec (map #(cond
+                                       (contains? gewinner %) gewinnerpunkte
+                                       (contains? verlierer %) verliererpunkte
+                                       :else 0) (range 5)))
+        bockrunden        (:bockrunden e)]
+    {:gewinner gewinner
+     :aussetzer aussetzer
+     :spielwert punktzahl
+     :punkte punkte
+     :bockrunden bockrunden
+     :aktuelle-bockrunden [0 0]}))
+
+(defn spiel-abrechnen [db]
+  (let [spieleingabe                  (:spieleingabe db)
+        neues-spiel                   (spieleingabe->spiel spieleingabe)
+        solospiel                     (not= (count (:gewinner neues-spiel)) 2)
+        bockrunden                    (:bockrunden neues-spiel)
+        fuenfspieler                  (get-in db [:spieler :fuenf])
+        bisherige-aktuelle-bockrunden (aktuelle-bockrunden db)
+        neue-aktuelle-bockrunden (berechne-neue-bockrunden bisherige-aktuelle-bockrunden bockrunden fuenfspieler solospiel)
+        neues-spiel-mit-bockrunden    (assoc neues-spiel :aktuelle-bockrunden neue-aktuelle-bockrunden)]
+    (-> db
+        (update :spiele conj neues-spiel-mit-bockrunden)
+        (assoc :spieleingabe (if fuenfspieler initialStateFuenfSpieler initialStateVierSpieler)))))
+
+(defn add-punkte [spiele]
+  (loop [result []
+         last-punkte [0 0 0 0 0]
+         [head & rest] spiele]
+    (if head
+      (let [new-last-punkte (map + last-punkte (:punkte head))]
+        (recur (conj result (assoc head :punkte new-last-punkte)) new-last-punkte rest))
+      result)))
+
+
+(defn spielstand [db]
+  (add-punkte (:spiele db)))
 
 (register-handler
   :init-db
@@ -175,7 +217,9 @@
 (register-handler
   :spiel-abrechnen
   (fn [db _]
-    (spiel-abrechnen db)))
+    (let [new-db  (spiel-abrechnen db)]
+      (println "spiele:" (:spiele new-db))
+      new-db)))
 
 
 (register-sub
@@ -203,7 +247,13 @@
   :aktuelle-bockrunden
   (fn  [db]
     (reaction
-      (aktuelle-bockrunden db))))
+      (aktuelle-bockrunden @db))))
+
+(register-sub
+  :spielstand
+  (fn  [db]
+    (reaction
+      (spielstand @db))))
 
 
 
@@ -214,8 +264,23 @@
   (vlast [])
   (spiel-abrechnen {:spiele []
                     :spieleingabe {
-                      :gewinner [true, true, true, false, false]
-                      :aussetzer [false, false, false, true, false]
-                      :spielwert 1}
+                                    :gewinner [true, true, true, false, false]
+                                    :aussetzer [false, false, false, true, false]
+                                    :spielwert 1
+                                    :bockrunden 1}
                     })
+
+  (berechne-neue-bockrunden [0 0] 1 true true)
+
+  (defn lazy-test
+      ([end] (lazy-test 0 end))
+      ([current end]
+       (if (= current end)
+         nil
+         (lazy-seq (cons current (lazy-test (inc current) end)))))
+    )
+
+  (lazy-test 3)
+
+  (add-punkte [{:punkte [1 1 1 1 1]} {:punkte [1 1 1 1 1]}])
   )

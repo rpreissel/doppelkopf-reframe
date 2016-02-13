@@ -9,3 +9,5 @@
 (def button-toolbar (reagent/adapt-react-class (aget js/ReactBootstrap  "ButtonToolbar")))
 
 (def panel (reagent/adapt-react-class (aget js/ReactBootstrap  "Panel")))
+
+(def table (reagent/adapt-react-class (aget js/ReactBootstrap  "Table")))

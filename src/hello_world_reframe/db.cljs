@@ -5,8 +5,23 @@
             [re-frame.core :refer [register-handler
                                    register-sub
                                    dispatch
+                                   after
                                    dispatch-sync
                                    subscribe]]))
+
+(def lsk "doppelkopf-reframe")
+
+(defn state->ls!
+  [db]
+  (.setItem js/localStorage lsk (str db)))
+
+(defn ls->state
+  []
+  (some->> (.getItem js/localStorage lsk)
+           (cljs.reader/read-string)   ;; stored as an EDN map.
+    ))
+
+(def ->ls (after state->ls!))
 
 
 (def initialStateVierSpieler
@@ -187,50 +202,63 @@
 (defn spielstand [db]
   (add-punkte (:spiele db)))
 
-(register-handler
-  :init-db
-  (fn [_ _]
+(defn init-db []
+  (if-let [storage (ls->state)]
+    storage
     default-db))
 
 (register-handler
+  :init-db
+  (fn [_ _]
+    (init-db)))
+
+(register-handler
   :fuenf-spieler-modus
+  ->ls
   (fn [db [_ fuenfspieler]]
     (println "fuenfspieler: " fuenfspieler)
     (toggle-fuenf-spieler-modus db fuenfspieler)))
 
 (register-handler
   :spieler-name
+  ->ls
   (fn [db [_ index name]]
     (assoc-in db [:spieler :names index] name)))
 
 (register-handler
   :toggle-gewinner
+  ->ls
   (fn [db [_ spieler]]
     (toggle-gewinner db spieler)))
 
 (register-handler
   :toggle-aussetzer
+  ->ls
   (fn [db [_ spieler]]
     (toggle-aussetzer db spieler)))
 
 
 (register-handler
   :add-bockrunde
+  ->ls
   (fn [db _]
     (add-bockrunde db)))
 
 (register-handler
   :reset-bockrunden
+  ->ls
   (fn [db _]
     (reset-bockrunden db)))
 
 (register-handler
   :set-spielwert
+  ->ls
   (fn [db [_ value]]
     (set-spielwert db value)))
 
 (register-handler
   :spiel-abrechnen
+  ->ls
   (fn [db _]
     (let [new-db  (spiel-abrechnen db)]
       (println "spiele:" (:spiele new-db))
@@ -238,8 +266,15 @@
 
 (register-handler
   :letztes-spiel-aendern
+  ->ls
   (fn [db _]
     (letztes-spiel-aendern db)))
+
+(register-handler
+  :delete-ls
+  ->ls
+  (fn [db _]
+    default-db))
 
 
 

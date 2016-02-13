@@ -20,17 +20,21 @@
       (let [fuenfspieler (:fuenf @spieler)
             vierspieler (not fuenfspieler)
             spielernames (:names @spieler)]
-        [bs/panel {:header (as-element [:h3 "Spielerauswahl"]) :bsStyle "info"}
-         [:div.form-group
-          [:label.checkbox-inline
-           [:input {:type "checkbox" :value 4 :checked vierspieler :onChange #(dispatch [:fuenf-spieler-modus false])} "4 Spieler"]]
-          [:label.checkbox-inline
-           [:input {:type "checkbox" :value 5 :checked fuenfspieler :onChange #(dispatch [:fuenf-spieler-modus true])} "5 Spieler"]]]
-         [:div.form-inline.form-group
-          (map-indexed spieler-name spielernames)]
-         [:div
-           [bs/button {:bsStyle "primary" :onClick #(dispatch [:route-to :spielverlauf])} "Zum Spiel"]]
-         ]
+        [:div
+          [bs/panel {:header (as-element [:h3 "Spielerauswahl"]) :bsStyle "info"}
+           [:div.form-group
+            [:label.checkbox-inline
+             [:input {:type "checkbox" :value 4 :checked vierspieler :onChange #(dispatch [:fuenf-spieler-modus false])} "4 Spieler"]]
+            [:label.checkbox-inline
+             [:input {:type "checkbox" :value 5 :checked fuenfspieler :onChange #(dispatch [:fuenf-spieler-modus true])} "5 Spieler"]]]
+           [:div.form-inline.form-group
+            (map-indexed spieler-name spielernames)]
+           [:div
+             [bs/button {:bsStyle "primary" :onClick #(dispatch [:route-to :spielverlauf])} "Zum Spiel"]]
+           ]
+          [bs/panel {:header (as-element [:h3 "Administration"]) :bsStyle "warning"}
+            [:div
+             [bs/button {:bsStyle "danger" :onClick #(dispatch [:delete-ls])} "Daten löschen"]]]]
         )
       )
     ))

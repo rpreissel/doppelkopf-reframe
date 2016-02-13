@@ -12,6 +12,7 @@
                   :exclusions [org.clojure/tools.reader]]
                  [reagent "0.5.1"]
                  [re-frame "0.7.0-alpha-2"]
+                 [prismatic/schema "1.0.5"]
                  [cljsjs/react-bootstrap "0.28.1-0" :exclusions [org.webjars.bower/jquery]]]
 
   :plugins [[lein-figwheel "0.5.0-6"]

@@ -7,7 +7,39 @@
                                    dispatch
                                    after
                                    dispatch-sync
-                                   subscribe]]))
+                                   subscribe]]
+            [cljs.reader]
+            [schema.core :as s :include-macros true]))
+
+
+(def schema {:spieler { :names [s/Str]
+                        :fuenf s/Bool}
+               :route (s/enum :spielerauswahl :spielverlauf)
+               :spieleingabe {:gewinner [s/Bool]
+                              :aussetzer [s/Bool]
+                              :toggleGewinner [s/Bool]
+                              :toggleAussetzer [s/Bool]
+                              :spielwert s/Int
+                              :abrechenbar s/Bool
+                              :bockrunden s/Int }
+               :spiele [{:gewinner #{s/Int}
+                         :aussetzer #{s/Int}
+                         :spielwert s/Int
+                         :punkte [s/Int]
+                         :bockrunden s/Int
+                         :aktuelle-bockrunden (s/pair s/Int "doppelbock" s/Int "bock")}]
+             })
+
+(defn check-and-throw
+      "throw an exception if db doesn't match the schema."
+      [a-schema db]
+      (if-let [problems  (s/check a-schema db)]
+         (throw (js/Error. (str "schema check failed: " problems)))))
+
+;; after an event handler has run, this middleware can check that
+;; it the value in app-db still correctly matches the schema.
+(def check-schema-mw (after (partial check-and-throw schema)))
+
 
 (def lsk "doppelkopf-reframe")
 
@@ -22,6 +54,11 @@
     ))
 
 (def ->ls (after state->ls!))
+
+
+(def doppelkopf-middleware [check-schema-mw ;; after ever event handler make sure the schema is still valid
+                            ->ls            ;; write to localstore each time
+                            ])
 
 
 (def initialStateVierSpieler
@@ -209,56 +246,57 @@
 
 (register-handler
   :init-db
+  check-schema-mw
   (fn [_ _]
     (init-db)))
 
 (register-handler
   :fuenf-spieler-modus
-  ->ls
+  doppelkopf-middleware
   (fn [db [_ fuenfspieler]]
     (println "fuenfspieler: " fuenfspieler)
     (toggle-fuenf-spieler-modus db fuenfspieler)))
 
 (register-handler
   :spieler-name
-  ->ls
+  doppelkopf-middleware
   (fn [db [_ index name]]
     (assoc-in db [:spieler :names index] name)))
 
 (register-handler
   :toggle-gewinner
-  ->ls
+  doppelkopf-middleware
   (fn [db [_ spieler]]
     (toggle-gewinner db spieler)))
 
 (register-handler
   :toggle-aussetzer
-  ->ls
+  doppelkopf-middleware
   (fn [db [_ spieler]]
     (toggle-aussetzer db spieler)))
 
 
 (register-handler
   :add-bockrunde
-  ->ls
+  doppelkopf-middleware
   (fn [db _]
     (add-bockrunde db)))
 
 (register-handler
   :reset-bockrunden
-  ->ls
+  doppelkopf-middleware
   (fn [db _]
     (reset-bockrunden db)))
 
 (register-handler
   :set-spielwert
-  ->ls
+  doppelkopf-middleware
   (fn [db [_ value]]
     (set-spielwert db value)))
 
 (register-handler
   :spiel-abrechnen
-  ->ls
+  doppelkopf-middleware
   (fn [db _]
     (let [new-db  (spiel-abrechnen db)]
       (println "spiele:" (:spiele new-db))
@@ -266,13 +304,13 @@
 
 (register-handler
   :letztes-spiel-aendern
-  ->ls
+  doppelkopf-middleware
   (fn [db _]
     (letztes-spiel-aendern db)))
 
 (register-handler
   :delete-ls
-  ->ls
+  doppelkopf-middleware
   (fn [db _]
     default-db))
 
@@ -346,4 +384,15 @@
      :spielwert 1
      :bockrunden 1
      })
+
+  (schema.core/validate
+    schema
+    {:route :spielerauswahl
+     :spieler {:names ["rene"] :fuenf true}
+     :spieleingabe initialStateFuenfSpieler
+     :spiele []})
+
+  (schema.core/validate
+    schema
+    default-db)
   )

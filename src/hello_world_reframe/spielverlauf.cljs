@@ -102,7 +102,7 @@
         [:div
          [bs/panel {:header (as-element [:h3 "Aktionen"]) :bsStyle "info"}
           [bs/button-toolbar
-           [bs/button {:bsStyle "primary"} "Letztes Spiel ändern"]
+           [bs/button {:bsStyle "primary" :disabled (empty? @spielstand-rx) :onClick #(dispatch [:letztes-spiel-aendern])} "Letztes Spiel ändern"]
            [bs/button {:bsStyle "primary" :onClick #(dispatch [:route-to :spielerauswahl])} "Einstellungen"]
            ]]
          [bs/panel {:header (as-element [:h3 eingabe-titel]) :bsStyle eingabe-style}

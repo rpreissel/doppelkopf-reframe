@@ -13,8 +13,8 @@
               :onClick #(dispatch [dispatch-key index])} name])
 
 (defn- spielerbuttons [label spieler states toggles dispatch-key]
-  (letfn [(create-button [index name]
-                         ^{:key index}[spielerbutton index name (states index) (toggles index) dispatch-key])]
+  (let [create-button (fn [index name]
+                        ^{:key index}[spielerbutton index name (states index) (toggles index) dispatch-key])]
     [:div.form-group
      [:label label]
      [bs/button-toolbar
@@ -33,8 +33,8 @@
       [bs/button {:bsStyle "default" :onClick #(dispatch [:reset-bockrunden])} "Bockrunden zurücksetzen"]]]))
 
 (defn- spielwert [value]
-  (letfn [(create-button [value]
-                         ^{:key value} [bs/button {:bsStyle "default" :onClick #(dispatch [:set-spielwert (str value)])} value])]
+  (let [create-button (fn [value]
+                        ^{:key value} [bs/button {:bsStyle "default" :onClick #(dispatch [:set-spielwert (str value)])} value])]
     [:div.form-group
      [:label "Spielwert"]
      [:div.row
@@ -42,7 +42,13 @@
        [:input.text-right {:type "text" :value value :onChange #(dispatch [:set-spielwert (-> % .-target .-value)])}]]]
      [:div.row
       [bs/button-toolbar {:class "col-sm-8"}
-       (map create-button (drop 1 (range 9)))]]]))
+       (map create-button (range 1 9))]]]))
+
+(defn- spielabrechnen [abrechenbar]
+  [:div
+   [bs/button-toolbar
+    [bs/button {:bsStyle "primary" :disabled (not abrechenbar) :onClick #(dispatch [:spiel-abrechnen])} "Spiel abrechnen"]]])
+
 
 
 (defn- spieleingabe [spieler spieleingabe mit-aussetzer]
@@ -52,21 +58,32 @@
      [spielerbuttons "Aussetzer" spieler (:aussetzer spieleingabe) (:toggleAussetzer spieleingabe) :toggle-aussetzer])
    [bockrunden (:bockrunden spieleingabe)]
    [spielwert (:spielwert spieleingabe)]
+   [spielabrechnen (:abrechenbar spieleingabe)]
    ])
 
 (defn spielverlauf
   []
   (let [spieler-names-rx (subscribe [:spieler-names])
-        spieleingabe-rx (subscribe [:spieleingabe])]
+        spieleingabe-rx (subscribe [:spieleingabe])
+        aktuelle-bockrunden-rx (subscribe [:aktuelle-bockrunden])]
     (fn []
-      (let [mit-aussetzer (some identity (:toggleAussetzer @spieleingabe-rx))]
+      (let [mit-aussetzer (some identity (:toggleAussetzer @spieleingabe-rx))
+            [doppelbockspiele bockspiele] @aktuelle-bockrunden-rx
+            eingabe-titel (cond
+                           (> doppelbockspiele 0) (str "Eingabe (" doppelbockspiele " Doppelbock- / " bockspiele " Bockspiele)")
+                           (> bockspiele 0) (str "Eingabe ("  bockspiele " Bockspiele)")
+                           :else "Eingabe")
+            eingabe-style (cond
+                           (> doppelbockspiele 0) "danger"
+                           (> bockspiele 0) "warning"
+                           :else "info")]
         [:div
          [bs/panel {:header (as-element [:h3 "Aktionen"]) :bsStyle "info"}
           [bs/button-toolbar
            [bs/button {:bsStyle "primary"} "Letztes Spiel ändern"]
            [bs/button {:bsStyle "primary" :onClick #(dispatch [:route-to :spielerauswahl])} "Einstellungen"]
            ]]
-         [bs/panel {:header (as-element [:h3 "Eingabe"]) :bsStyle "info"}
+         [bs/panel {:header (as-element [:h3 eingabe-titel]) :bsStyle eingabe-style}
           [:div [spieleingabe @spieler-names-rx @spieleingabe-rx mit-aussetzer]]
           ]
          ]

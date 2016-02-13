@@ -1,6 +1,7 @@
 (ns hello-world-reframe.db
   (:require-macros [reagent.ratom :refer [reaction]])
-  (:require [reagent.core :as reagent :refer [atom]]
+  (:require [clojure.set :as set]
+            [reagent.core :as reagent :refer [atom]]
             [re-frame.core :refer [register-handler
                                    register-sub
                                    dispatch
@@ -32,6 +33,7 @@
    { :names ["Spieler1" "Spieler2" "Spieler3" "Spieler4" "Spieler5" ]
      :fuenf true}
    :spieleingabe initialStateFuenfSpieler
+   :spiele []
    :route :spielerauswahl})
 
 
@@ -93,6 +95,41 @@
       (assoc-in db [:spieleingabe :spielwert] parsed-value)
       db)))
 
+(defn- vlast [v]
+  (let [s (count v)]
+    (when (> s 0) (nth v (dec s)))))
+
+(defn aktuelle-bockrunden [db]
+  (let [last-spiel (vlast (:spiele db))]
+    (if last-spiel (:aktuelle-bockrunden last-spiel) [0 0])))
+
+(defn spiel-abrechnen [db]
+  (let [fuenfspieler (get-in db [:spieler :fuenf])
+        gewinner-flags (get-in db [:spieleingabe :gewinner])
+        aussetzer-flags (get-in db [:spieleingabe :aussetzer])
+        gewinner (set (keep-indexed #(if %2 %1) gewinner-flags))
+        aussetzer (set (keep-indexed #(if %2 %1) aussetzer-flags))
+        verlierer (set/difference (set (range 5)) gewinner aussetzer)
+        anzahlgewinner (count gewinner)
+        anzahlverlierer (count verlierer)
+        punktzahl (get-in db [:spieleingabe :spielwert])
+        gewinnerpunkte (if (= anzahlgewinner 1) (* 3 punktzahl) punktzahl)
+        verliererpunkte (- 0 (/ (* gewinnerpunkte anzahlgewinner) anzahlverlierer))
+        punkte (vec (map #(cond
+                       (contains? gewinner %) gewinnerpunkte
+                       (contains? verlierer %) verliererpunkte
+                       :else 0) (range 5)))
+        neues-spiel {:gewinner gewinner
+                     :aussetzer aussetzer
+                     :spielwert punktzahl
+                     :punkte punkte}]
+      (println gewinnerpunkte)
+      (println verliererpunkte)
+
+      (-> db
+          (update :spiele conj neues-spiel)
+          (assoc :spieleingabe (if fuenfspieler initialStateFuenfSpieler initialStateVierSpieler)))))
+
 (register-handler
   :init-db
   (fn [_ _]
@@ -133,9 +170,12 @@
 (register-handler
   :set-spielwert
   (fn [db [_ value]]
-    (println "Spielwert:" value)
     (set-spielwert db value)))
 
+(register-handler
+  :spiel-abrechnen
+  (fn [db _]
+    (spiel-abrechnen db)))
 
 
 (register-sub
@@ -159,3 +199,23 @@
     (reaction
       (:spieleingabe @db))))
 
+(register-sub
+  :aktuelle-bockrunden
+  (fn  [db]
+    (reaction
+      (aktuelle-bockrunden db))))
+
+
+
+
+(comment
+  (count [1 2])
+  (vlast [1 2])
+  (vlast [])
+  (spiel-abrechnen {:spiele []
+                    :spieleingabe {
+                      :gewinner [true, true, true, false, false]
+                      :aussetzer [false, false, false, true, false]
+                      :spielwert 1}
+                    })
+  )

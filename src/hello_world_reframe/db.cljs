@@ -147,7 +147,7 @@
 
 (defn- vlast [v]
   (let [s (count v)]
-    (when (> s 0) (nth v (dec s)))))
+    (when (pos? s) (nth v (dec s)))))
 
 (defn aktuelle-bockrunden [db]
   (let [last-spiel (vlast (:spiele db))]

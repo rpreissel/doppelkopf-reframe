@@ -102,18 +102,18 @@
 (defn update-aussetzer-toggle-und-abrechenbar-state [db]
   (let [fuenfspieler (get-in db [:spieler :fuenf])
         gewinner (get-in db [:spieleingabe :gewinner])
-        anzahlgewinner (reduce #(+ %1 (if %2 1 0)) 0 gewinner)
-        togglegewinner-korrigiert (map #(or %1 (< anzahlgewinner 3)) gewinner)
+        anzahlgewinner (-> gewinner (frequencies) (get true 0))
+        togglegewinner-korrigiert (mapv #(or %1 (< anzahlgewinner 3)) gewinner)
         aussetzer (get-in db [:spieleingabe :aussetzer])
-        aussetzer-korrigiert (map #(if %1 false %2) gewinner aussetzer)
-        toggleaussetzer-korrigiert (map #(and fuenfspieler (not %1)) gewinner)
+        aussetzer-korrigiert (mapv #(if %1 false %2) gewinner aussetzer)
+        toggleaussetzer-korrigiert (mapv #(and fuenfspieler (not %1)) gewinner)
         aussetzer-vorhanden (some identity aussetzer-korrigiert)
-        abrechenbar (and (> anzahlgewinner 0) (or (not fuenfspieler) aussetzer-vorhanden))]
+        abrechenbar (and (pos? anzahlgewinner) (or (not fuenfspieler) aussetzer-vorhanden))]
     (-> db
-        (assoc-in [:spieleingabe  :aussetzer] (vec aussetzer-korrigiert))
-        (assoc-in [:spieleingabe  :toggleGewinner] (vec togglegewinner-korrigiert))
-        (assoc-in [:spieleingabe  :toggleAussetzer] (vec toggleaussetzer-korrigiert))
-        (assoc-in [:spieleingabe  :abrechenbar] (not (nil? abrechenbar))))
+        (assoc-in [:spieleingabe  :aussetzer] aussetzer-korrigiert)
+        (assoc-in [:spieleingabe  :toggleGewinner] togglegewinner-korrigiert)
+        (assoc-in [:spieleingabe  :toggleAussetzer] toggleaussetzer-korrigiert)
+        (assoc-in [:spieleingabe  :abrechenbar] (boolean abrechenbar)))
     ))
 
 (defn toggle-gewinner [db spieler]
@@ -125,10 +125,10 @@
 
 (defn toggle-aussetzer [db spieler]
   (if-let [toggleable (get-in db [:spieleingabe :toggleAussetzer spieler])]
-    (let [aussetzer (get-in db [:spieleingabe :aussetzer])
-          aussetzer-korrigiert (map-indexed #(and (= %1 spieler) (not %2)) aussetzer) ]
+    (let [war-aussetzer (get-in db [:spieleingabe :aussetzer spieler])
+          aussetzer-korrigiert  (mapv #(if war-aussetzer false (= spieler %)) (range 5))]
       (-> db
-          (assoc-in [:spieleingabe :aussetzer] (vec aussetzer-korrigiert))
+          (assoc-in [:spieleingabe :aussetzer] aussetzer-korrigiert)
           (update-aussetzer-toggle-und-abrechenbar-state)))
     db))
 
@@ -156,9 +156,9 @@
 (defn- berechne-neue-bockrunden [[bis-doppel bis-einzel] neue-bockrunden fuenf solospiel]
   (let [[basis-doppel basis-einzel] (if solospiel
                                       [bis-doppel bis-einzel]
-                                      (if (> bis-doppel 0)
+                                      (if (pos? bis-doppel)
                                         [(dec bis-doppel) bis-einzel]
-                                        (if (> bis-einzel 0)
+                                        (if (pos? bis-einzel)
                                           [0 (dec bis-einzel)]
                                           [0 0])))
 
@@ -174,32 +174,29 @@
       [neu-bockrunde1 (- neu-bockrunde2 neu-bockrunde1)])))
 
 (defn- spieleingabe->spiel [e]
-  (let [gewinner-flags    (:gewinner e)
-        aussetzer-flags   (:aussetzer e)
-        gewinner          (set (keep-indexed #(if %2 %1) gewinner-flags))
-        aussetzer         (set (keep-indexed #(if %2 %1) aussetzer-flags))
+  (let [gewinner          (set (keep-indexed #(if %2 %1) (:gewinner e)))
+        aussetzer         (set (keep-indexed #(if %2 %1) (:aussetzer e)))
         verlierer         (set/difference (set (range 5)) gewinner aussetzer)
         anzahlgewinner    (count gewinner)
         anzahlverlierer   (count verlierer)
         punktzahl         (:spielwert e)
         gewinnerpunkte    (if (= anzahlgewinner 1) (* 3 punktzahl) punktzahl)
         verliererpunkte   (- 0 (/ (* gewinnerpunkte anzahlgewinner) anzahlverlierer))
-        punkte            (vec (map #(cond
-                                       (contains? gewinner %) gewinnerpunkte
-                                       (contains? verlierer %) verliererpunkte
-                                       :else 0) (range 5)))
-        bockrunden        (:bockrunden e)]
+        punkte            (mapv #(cond
+                                       (gewinner %) gewinnerpunkte
+                                       (verlierer %) verliererpunkte
+                                       :else 0) (range 5))]
     {:gewinner gewinner
      :aussetzer aussetzer
      :spielwert punktzahl
      :punkte punkte
-     :bockrunden bockrunden
+     :bockrunden  (:bockrunden e)
      :aktuelle-bockrunden [0 0]}))
 
 (defn- spiel->spieleingabe [s]
-   {:gewinner        (vec (map #(contains? (:gewinner s) %) (range 5)))
+   {:gewinner        (mapv #(contains? (:gewinner s) %) (range 5))
     :toggleGewinner  [true true true true true],
-    :aussetzer       (vec (map #(contains? (:aussetzer s) %) (range 5))),
+    :aussetzer       (mapv #(contains? (:aussetzer s) %) (range 5)),
     :toggleAussetzer [true true true true true],
     :spielwert       (:spielwert s),
     :abrechenbar     true,
@@ -395,4 +392,6 @@
   (schema.core/validate
     schema
     default-db)
+
+  (-> [true true false false] (frequencies) (get true))
   )

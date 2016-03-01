@@ -18,7 +18,12 @@
   :plugins [[lein-figwheel "0.5.0-6"]
             [lein-cljsbuild "1.1.2" :exclusions [[org.clojure/clojure]]]]
 
-  :source-paths ["src"]
+  :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
+
+  :profiles {:dev {:dependencies [[com.cemerick/piggieback "0.2.1"]
+                                  [figwheel-sidecar "0.5.0-5"]]}}
+
+  :source-paths ["src",,"scripts"]
 
   :clean-targets ^{:protect false} ["resources/public/js/compiled" "target"]
 

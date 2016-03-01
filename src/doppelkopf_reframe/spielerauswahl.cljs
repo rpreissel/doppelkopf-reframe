@@ -1,11 +1,11 @@
-(ns hello-world-reframe.spielerauswahl
+(ns doppelkopf-reframe.spielerauswahl
   (:require-macros [reagent.ratom :refer [reaction]])
   (:require [re-frame.core :refer [register-handler
                                    register-sub
                                    dispatch
                                    subscribe]]
             [reagent.core :as reagent :refer [as-element]]
-            [hello-world-reframe.bootstrap :as bs]))
+            [doppelkopf-reframe.bootstrap :as bs]))
 
 
 (defn- spieler-name [index name]

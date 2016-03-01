@@ -32,11 +32,11 @@
                 :source-paths ["src"]
 
                 ;; If no code is to be run, set :figwheel true for continued automagical reloading
-                :figwheel {:on-jsload "hello-world-reframe.core/on-js-reload"}
+                :figwheel {:on-jsload "doppelkopf-reframe.core/on-js-reload"}
 
-                :compiler {:main hello-world-reframe.core
+                :compiler {:main doppelkopf-reframe.core
                            :asset-path "js/compiled/out"
-                           :output-to "resources/public/js/compiled/hello_world_reframe.js"
+                           :output-to "resources/public/js/compiled/doppelkopf_reframe.js"
                            :output-dir "resources/public/js/compiled/out"
                            :source-map-timestamp true}}
                ;; This next build is an compressed minified build for
@@ -44,8 +44,8 @@
                ;; lein cljsbuild once min
                {:id "min"
                 :source-paths ["src"]
-                :compiler {:output-to "resources/public/js/compiled/hello_world_reframe.js"
-                           :main hello-world-reframe.core
+                :compiler {:output-to "resources/public/js/compiled/doppelkopf_reframe.js"
+                           :main doppelkopf-reframe.core
                            :optimizations :advanced
                            :pretty-print false}}]}
 

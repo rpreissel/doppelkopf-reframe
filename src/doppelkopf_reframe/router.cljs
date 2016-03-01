@@ -1,4 +1,4 @@
-(ns hello-world-reframe.router
+(ns doppelkopf-reframe.router
   (:require-macros [reagent.ratom :refer [reaction]])
   (:require [re-frame.core :refer [register-handler
                                    register-sub

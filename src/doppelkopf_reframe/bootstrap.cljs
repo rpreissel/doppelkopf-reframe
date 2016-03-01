@@ -1,4 +1,4 @@
-(ns hello-world-reframe.bootstrap
+(ns doppelkopf-reframe.bootstrap
   (:require [reagent.core :as reagent]
             [cljsjs.react-bootstrap]))
 

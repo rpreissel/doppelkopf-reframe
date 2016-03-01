@@ -1,11 +1,11 @@
-(ns hello-world-reframe.spielverlauf
+(ns doppelkopf-reframe.spielverlauf
   (:require-macros [reagent.ratom :refer [reaction]])
   (:require [re-frame.core :refer [register-handler
                                    register-sub
                                    dispatch
                                    subscribe]]
             [reagent.core :as reagent :refer [as-element]]
-            [hello-world-reframe.bootstrap :as bs]))
+            [doppelkopf-reframe.bootstrap :as bs]))
 
 
 (defn- spielerbuttons [label spieler states toggles dispatch-key]

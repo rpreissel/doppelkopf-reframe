@@ -1,4 +1,4 @@
-(ns hello-world-reframe.core
+(ns doppelkopf-reframe.core
   (:require-macros [reagent.ratom :refer [reaction]])
   (:require [reagent.core :as reagent :refer [atom]]
             [re-frame.core :refer [register-handler
@@ -7,11 +7,11 @@
                                    dispatch
                                    dispatch-sync
                                    subscribe]]
-            [hello-world-reframe.router :as router :refer [route-panel]]
-            [hello-world-reframe.bootstrap :as bs]
-            [hello-world-reframe.spielerauswahl :refer [spielerauswahl]]
-            [hello-world-reframe.spielverlauf :refer [spielverlauf]]
-            [hello-world-reframe.db :as db]))
+            [doppelkopf-reframe.router :as router :refer [route-panel]]
+            [doppelkopf-reframe.bootstrap :as bs]
+            [doppelkopf-reframe.spielerauswahl :refer [spielerauswahl]]
+            [doppelkopf-reframe.spielverlauf :refer [spielverlauf]]
+            [doppelkopf-reframe.db :as db]))
 
 (enable-console-print!)
 

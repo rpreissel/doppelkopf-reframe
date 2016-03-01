@@ -1,4 +1,4 @@
-(ns hello-world-reframe.db
+(ns doppelkopf-reframe.db
   (:require-macros [reagent.ratom :refer [reaction]])
   (:require [clojure.set :as set]
             [reagent.core :as reagent :refer [atom]]

@@ -12,29 +12,29 @@
             [schema.core :as s :include-macros true]))
 
 
-(def schema {:spieler { :names [s/Str]
-                        :fuenf s/Bool}
-               :route (s/enum :spielerauswahl :spielverlauf)
-               :spieleingabe {:gewinner [s/Bool]
-                              :aussetzer [s/Bool]
-                              :toggleGewinner [s/Bool]
-                              :toggleAussetzer [s/Bool]
-                              :spielwert s/Int
-                              :abrechenbar s/Bool
-                              :bockrunden s/Int }
-               :spiele [{:gewinner #{s/Int}
-                         :aussetzer #{s/Int}
-                         :spielwert s/Int
-                         :punkte [s/Int]
-                         :bockrunden s/Int
-                         :aktuelle-bockrunden (s/pair s/Int "doppelbock" s/Int "bock")}]
+(def schema {:spieler      {:names [s/Str]
+                            :fuenf s/Bool}
+             :route        (s/enum :spielerauswahl :spielverlauf)
+             :spieleingabe {:gewinner        [s/Bool]
+                            :aussetzer       [s/Bool]
+                            :toggleGewinner  [s/Bool]
+                            :toggleAussetzer [s/Bool]
+                            :spielwert       s/Int
+                            :abrechenbar     s/Bool
+                            :bockrunden      s/Int}
+             :spiele       [{:gewinner            #{s/Int}
+                             :aussetzer           #{s/Int}
+                             :spielwert           s/Int
+                             :punkte              [s/Int]
+                             :bockrunden          s/Int
+                             :aktuelle-bockrunden (s/pair s/Int "doppelbock" s/Int "bock")}]
              })
 
 (defn check-and-throw
-      "throw an exception if db doesn't match the schema."
-      [a-schema db]
-      (if-let [problems  (s/check a-schema db)]
-         (throw (js/Error. (str "schema check failed: " problems)))))
+  "throw an exception if db doesn't match the schema."
+  [a-schema db]
+  (if-let [problems (s/check a-schema db)]
+    (throw (js/Error. (str "schema check failed: " problems)))))
 
 ;; after an event handler has run, this middleware can check that
 ;; it the value in app-db still correctly matches the schema.
@@ -50,14 +50,14 @@
 (defn ls->state
   []
   (some->> (.getItem js/localStorage lsk)
-           (cljs.reader/read-string)   ;; stored as an EDN map.
-    ))
+           (cljs.reader/read-string)                        ;; stored as an EDN map.
+           ))
 
 (def ->ls (after state->ls!))
 
 
-(def doppelkopf-middleware [check-schema-mw ;; after ever event handler make sure the schema is still valid
-                            ->ls            ;; write to localstore each time
+(def doppelkopf-middleware [check-schema-mw                 ;; after ever event handler make sure the schema is still valid
+                            ->ls                            ;; write to localstore each time
                             ])
 
 
@@ -68,7 +68,7 @@
    :toggleAussetzer [false false false false false],
    :spielwert       0,
    :abrechenbar     false,
-   :bockrunden      0 })
+   :bockrunden      0})
 
 (def initialStateFuenfSpieler
   {:gewinner        [false false false false false],
@@ -77,16 +77,16 @@
    :toggleAussetzer [true true true true true],
    :spielwert       0,
    :abrechenbar     false,
-   :bockrunden      0 })
+   :bockrunden      0})
 
 
 (def default-db
   {:spieler
-   { :names ["Spieler1" "Spieler2" "Spieler3" "Spieler4" "Spieler5" ]
-     :fuenf true}
+                 {:names ["Spieler1" "Spieler2" "Spieler3" "Spieler4" "Spieler5"]
+                  :fuenf true}
    :spieleingabe initialStateFuenfSpieler
-   :spiele []
-   :route :spielerauswahl})
+   :spiele       []
+   :route        :spielerauswahl})
 
 
 (defn toggle-fuenf-spieler-modus [db fuenfspieler]
@@ -110,10 +110,10 @@
         aussetzer-vorhanden (some identity aussetzer-korrigiert)
         abrechenbar (and (pos? anzahlgewinner) (or (not fuenfspieler) aussetzer-vorhanden))]
     (-> db
-        (assoc-in [:spieleingabe  :aussetzer] aussetzer-korrigiert)
-        (assoc-in [:spieleingabe  :toggleGewinner] togglegewinner-korrigiert)
-        (assoc-in [:spieleingabe  :toggleAussetzer] toggleaussetzer-korrigiert)
-        (assoc-in [:spieleingabe  :abrechenbar] (boolean abrechenbar)))
+        (assoc-in [:spieleingabe :aussetzer] aussetzer-korrigiert)
+        (assoc-in [:spieleingabe :toggleGewinner] togglegewinner-korrigiert)
+        (assoc-in [:spieleingabe :toggleAussetzer] toggleaussetzer-korrigiert)
+        (assoc-in [:spieleingabe :abrechenbar] (boolean abrechenbar)))
     ))
 
 (defn toggle-gewinner [db spieler]
@@ -126,7 +126,7 @@
 (defn toggle-aussetzer [db spieler]
   (if-let [toggleable (get-in db [:spieleingabe :toggleAussetzer spieler])]
     (let [war-aussetzer (get-in db [:spieleingabe :aussetzer spieler])
-          aussetzer-korrigiert  (mapv #(if war-aussetzer false (= spieler %)) (range 5))]
+          aussetzer-korrigiert (mapv #(if war-aussetzer false (= spieler %)) (range 5))]
       (-> db
           (assoc-in [:spieleingabe :aussetzer] aussetzer-korrigiert)
           (update-aussetzer-toggle-und-abrechenbar-state)))
@@ -174,43 +174,43 @@
       [neu-bockrunde1 (- neu-bockrunde2 neu-bockrunde1)])))
 
 (defn- spieleingabe->spiel [e]
-  (let [gewinner          (set (keep-indexed #(if %2 %1) (:gewinner e)))
-        aussetzer         (set (keep-indexed #(if %2 %1) (:aussetzer e)))
-        verlierer         (set/difference (set (range 5)) gewinner aussetzer)
-        anzahlgewinner    (count gewinner)
-        anzahlverlierer   (count verlierer)
-        punktzahl         (:spielwert e)
-        gewinnerpunkte    (if (= anzahlgewinner 1) (* 3 punktzahl) punktzahl)
-        verliererpunkte   (- 0 (/ (* gewinnerpunkte anzahlgewinner) anzahlverlierer))
-        punkte            (mapv #(cond
-                                       (gewinner %) gewinnerpunkte
-                                       (verlierer %) verliererpunkte
-                                       :else 0) (range 5))]
-    {:gewinner gewinner
-     :aussetzer aussetzer
-     :spielwert punktzahl
-     :punkte punkte
-     :bockrunden  (:bockrunden e)
+  (let [gewinner (set (keep-indexed #(if %2 %1) (:gewinner e)))
+        aussetzer (set (keep-indexed #(if %2 %1) (:aussetzer e)))
+        verlierer (set/difference (set (range 5)) gewinner aussetzer)
+        anzahlgewinner (count gewinner)
+        anzahlverlierer (count verlierer)
+        punktzahl (:spielwert e)
+        gewinnerpunkte (if (= anzahlgewinner 1) (* 3 punktzahl) punktzahl)
+        verliererpunkte (- 0 (/ (* gewinnerpunkte anzahlgewinner) anzahlverlierer))
+        punkte (mapv #(cond
+                       (gewinner %) gewinnerpunkte
+                       (verlierer %) verliererpunkte
+                       :else 0) (range 5))]
+    {:gewinner            gewinner
+     :aussetzer           aussetzer
+     :spielwert           punktzahl
+     :punkte              punkte
+     :bockrunden          (:bockrunden e)
      :aktuelle-bockrunden [0 0]}))
 
 (defn- spiel->spieleingabe [s]
-   {:gewinner        (mapv #(contains? (:gewinner s) %) (range 5))
-    :toggleGewinner  [true true true true true],
-    :aussetzer       (mapv #(contains? (:aussetzer s) %) (range 5)),
-    :toggleAussetzer [true true true true true],
-    :spielwert       (:spielwert s),
-    :abrechenbar     true,
-    :bockrunden      (:bockrunden s)})
+  {:gewinner        (mapv #(contains? (:gewinner s) %) (range 5))
+   :toggleGewinner  [true true true true true],
+   :aussetzer       (mapv #(contains? (:aussetzer s) %) (range 5)),
+   :toggleAussetzer [true true true true true],
+   :spielwert       (:spielwert s),
+   :abrechenbar     true,
+   :bockrunden      (:bockrunden s)})
 
 (defn spiel-abrechnen [db]
-  (let [spieleingabe                  (:spieleingabe db)
-        neues-spiel                   (spieleingabe->spiel spieleingabe)
-        solospiel                     (not= (count (:gewinner neues-spiel)) 2)
-        bockrunden                    (:bockrunden neues-spiel)
-        fuenfspieler                  (get-in db [:spieler :fuenf])
+  (let [spieleingabe (:spieleingabe db)
+        neues-spiel (spieleingabe->spiel spieleingabe)
+        solospiel (not= (count (:gewinner neues-spiel)) 2)
+        bockrunden (:bockrunden neues-spiel)
+        fuenfspieler (get-in db [:spieler :fuenf])
         bisherige-aktuelle-bockrunden (aktuelle-bockrunden db)
         neue-aktuelle-bockrunden (berechne-neue-bockrunden bisherige-aktuelle-bockrunden bockrunden fuenfspieler solospiel)
-        neues-spiel-mit-bockrunden    (assoc neues-spiel :aktuelle-bockrunden neue-aktuelle-bockrunden)]
+        neues-spiel-mit-bockrunden (assoc neues-spiel :aktuelle-bockrunden neue-aktuelle-bockrunden)]
     (-> db
         (update :spiele conj neues-spiel-mit-bockrunden)
         (assoc :spieleingabe (if fuenfspieler initialStateFuenfSpieler initialStateVierSpieler)))))
@@ -295,7 +295,7 @@
   :spiel-abrechnen
   doppelkopf-middleware
   (fn [db _]
-    (let [new-db  (spiel-abrechnen db)]
+    (let [new-db (spiel-abrechnen db)]
       (println "spiele:" (:spiele new-db))
       new-db)))
 
@@ -315,34 +315,34 @@
 
 (register-sub
   :spieler
-  (fn  [db]
+  (fn [db]
     (reaction
       (:spieler @db))))
 
 (register-sub
   :spieler-names
-  (fn  [db]
+  (fn [db]
     (reaction
       (let [fuenf (get-in @db [:spieler :fuenf])
-            names (get-in @db [:spieler :names]) ]
+            names (get-in @db [:spieler :names])]
         (if fuenf names (butlast names))))))
 
 
 (register-sub
   :spieleingabe
-  (fn  [db]
+  (fn [db]
     (reaction
       (:spieleingabe @db))))
 
 (register-sub
   :aktuelle-bockrunden
-  (fn  [db]
+  (fn [db]
     (reaction
       (aktuelle-bockrunden @db))))
 
 (register-sub
   :spielstand
-  (fn  [db]
+  (fn [db]
     (reaction
       (spielstand @db))))
 
@@ -353,22 +353,22 @@
   (count [1 2])
   (vlast [1 2])
   (vlast [])
-  (spiel-abrechnen {:spiele []
+  (spiel-abrechnen {:spiele       []
                     :spieleingabe {
-                                    :gewinner [true, true, true, false, false]
-                                    :aussetzer [false, false, false, true, false]
-                                    :spielwert 1
-                                    :bockrunden 1}
+                                   :gewinner   [true, true, true, false, false]
+                                   :aussetzer  [false, false, false, true, false]
+                                   :spielwert  1
+                                   :bockrunden 1}
                     })
 
   (berechne-neue-bockrunden [0 5] 0 true false)
 
   (defn lazy-test
-      ([end] (lazy-test 0 end))
-      ([current end]
-       (if (= current end)
-         nil
-         (lazy-seq (cons current (lazy-test (inc current) end)))))
+    ([end] (lazy-test 0 end))
+    ([current end]
+     (if (= current end)
+       nil
+       (lazy-seq (cons current (lazy-test (inc current) end)))))
     )
 
   (lazy-test 3)
@@ -376,18 +376,18 @@
   (add-punkte [{:punkte [1 1 1 1 1]} {:punkte [1 1 1 1 1]}])
 
   (spiel->spieleingabe {
-     :gewinner #{0 1}
-     :aussetzer #{4}
-     :spielwert 1
-     :bockrunden 1
-     })
+                        :gewinner   #{0 1}
+                        :aussetzer  #{4}
+                        :spielwert  1
+                        :bockrunden 1
+                        })
 
   (schema.core/validate
     schema
-    {:route :spielerauswahl
-     :spieler {:names ["rene"] :fuenf true}
+    {:route        :spielerauswahl
+     :spieler      {:names ["rene"] :fuenf true}
      :spieleingabe initialStateFuenfSpieler
-     :spiele []})
+     :spiele       []})
 
   (schema.core/validate
     schema

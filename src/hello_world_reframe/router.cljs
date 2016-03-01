@@ -7,7 +7,7 @@
 
 (register-sub
   :route
-  (fn  [db]
+  (fn [db]
     (reaction
       (if-let [route (:route @db)]
         route

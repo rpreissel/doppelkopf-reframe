@@ -10,8 +10,8 @@
 
 (defn- spielerbuttons [label spieler states toggles dispatch-key]
   (let [create-button (fn [index name]
-                        [bs/button { :key index :bsStyle (if (states index) "primary" "default") :disabled (not (toggles index))
-                                     :onClick #(dispatch [dispatch-key index])} name])]
+                        [bs/button {:key     index :bsStyle (if (states index) "primary" "default") :disabled (not (toggles index))
+                                    :onClick #(dispatch [dispatch-key index])} name])]
     [:div.form-group
      [:label label]
      [bs/button-toolbar
@@ -42,8 +42,8 @@
        (map create-button (range 1 9))]]]))
 
 (defn- spielabrechnen [abrechenbar]
-   [bs/button-toolbar
-    [bs/button {:bsStyle "primary" :disabled (not abrechenbar) :onClick #(dispatch [:spiel-abrechnen])} "Spiel abrechnen"]])
+  [bs/button-toolbar
+   [bs/button {:bsStyle "primary" :disabled (not abrechenbar) :onClick #(dispatch [:spiel-abrechnen])} "Spiel abrechnen"]])
 
 
 
@@ -58,15 +58,15 @@
 
 (defn- ergebnistabelle [spieler spielstand]
   (letfn [(create-row [index row]
-                      [:tr.text-center {:key index}
-                       [:td (inc index)]
-                       (map-indexed #(create-column %1 %2 row) (:punkte row))])
+            [:tr.text-center {:key index}
+             [:td (inc index)]
+             (map-indexed #(create-column %1 %2 row) (:punkte row))])
           (create-column [index value row]
-                         (let [style (cond
-                                       (contains? (:gewinner row) index) "gewinner"
-                                       (contains? (:aussetzer row) index) ""
-                                       :else "verlierer")]
-                           [:td {:key index :class style} value]))]
+            (let [style (cond
+                          (contains? (:gewinner row) index) "gewinner"
+                          (contains? (:aussetzer row) index) ""
+                          :else "verlierer")]
+              [:td {:key index :class style} value]))]
     [bs/table {:striped true :bordered true :condensed true :responsive true}
      [:thead
       [:tr
@@ -87,7 +87,7 @@
             [doppelbockspiele bockspiele] @aktuelle-bockrunden-rx
             eingabe-titel (cond
                             (> doppelbockspiele 0) (str "Eingabe (" doppelbockspiele " Doppelbock- / " bockspiele " Bockspiele)")
-                            (> bockspiele 0) (str "Eingabe ("  bockspiele " Bockspiele)")
+                            (> bockspiele 0) (str "Eingabe (" bockspiele " Bockspiele)")
                             :else "Eingabe")
             eingabe-style (cond
                             (> doppelbockspiele 0) "danger"
@@ -122,7 +122,7 @@
   ([1 2 3] 0)
 
   (defn dummy []
-    (+ 1 2) )
+    (+ 1 2))
 
   (dummy)
 

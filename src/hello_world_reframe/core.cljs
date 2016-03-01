@@ -19,10 +19,10 @@
 
 
 (def routes
-  {:init [:div "Initializing..."]
+  {:init           [:div "Initializing..."]
    :spielerauswahl [spielerauswahl]
-   :spielverlauf  [spielverlauf],
-   :default :init})
+   :spielverlauf   [spielverlauf],
+   :default        :init})
 
 (defn hello-world []
   [:div.container-fluid
@@ -41,22 +41,22 @@
   ;; optionally touch your app-state to force rerendering depending on
   ;; your application
   ;; (swap! app-state update-in [:__figwheel_counter] inc)
-)
+  )
 
 
 (comment
 
   (defonce app-state (atom {:text "Hello world!"}))
 
-(defn my-div [props text]
-  (println text)
-  [:div props text])
+  (defn my-div [props text]
+    (println text)
+    [:div props text])
 
-(defn my-div-2 [props text]
-  (println "outer: " text)
-  (fn [props text]
-    (println "inner: " text)
-    [:div props text]))
+  (defn my-div-2 [props text]
+    (println "outer: " text)
+    (fn [props text]
+      (println "inner: " text)
+      [:div props text]))
 
 
   (map #(identity [:h2 (str "hallo:" %)]) (range 4))
@@ -66,7 +66,7 @@
     1
     2)
 
-   (dispatch-sync [:route-to :r1])
+  (dispatch-sync [:route-to :r1])
 
   )
 

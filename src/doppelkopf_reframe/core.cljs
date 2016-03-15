@@ -21,7 +21,7 @@
 (def routes
   {:init           [:div "Initializing..."]
    :spielerauswahl [spielerauswahl]
-   :spielverlauf   [spielverlauf],
+   :spielverlauf   [spielverlauf]
    :default        :init})
 
 (defn hello-world []

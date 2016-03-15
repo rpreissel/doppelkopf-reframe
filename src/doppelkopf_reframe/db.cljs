@@ -117,14 +117,14 @@
     ))
 
 (defn toggle-gewinner [db spieler]
-  (if-let [toggleable (get-in db [:spieleingabe :toggleGewinner spieler])]
+  (if (get-in db [:spieleingabe :toggleGewinner spieler])
     (-> db
         (update-in [:spieleingabe :gewinner spieler] not)
         (update-aussetzer-toggle-und-abrechenbar-state))
     db))
 
 (defn toggle-aussetzer [db spieler]
-  (if-let [toggleable (get-in db [:spieleingabe :toggleAussetzer spieler])]
+  (if (get-in db [:spieleingabe :toggleAussetzer spieler])
     (let [war-aussetzer (get-in db [:spieleingabe :aussetzer spieler])
           aussetzer-korrigiert (mapv #(if war-aussetzer false (= spieler %)) (range 5))]
       (-> db
@@ -174,8 +174,8 @@
       [neu-bockrunde1 (- neu-bockrunde2 neu-bockrunde1)])))
 
 (defn- spieleingabe->spiel [e]
-  (let [gewinner (set (keep-indexed #(if %2 %1) (:gewinner e)))
-        aussetzer (set (keep-indexed #(if %2 %1) (:aussetzer e)))
+  (let [gewinner (set (keep-indexed #(when %2 %1) (:gewinner e)))
+        aussetzer (set (keep-indexed #(when %2 %1) (:aussetzer e)))
         verlierer (set/difference (set (range 5)) gewinner aussetzer)
         anzahlgewinner (count gewinner)
         anzahlverlierer (count verlierer)

@@ -1,5 +1,4 @@
 (ns doppelkopf-reframe.spielverlauf
-  (:require-macros [reagent.ratom :refer [reaction]])
   (:require [re-frame.core :refer [register-handler
                                    register-sub
                                    dispatch
@@ -9,13 +8,14 @@
 
 
 (defn- spielerbuttons [label spieler states toggles dispatch-key]
-  (let [create-button (fn [index name]
-                        [bs/button {:key     index :bsStyle (if (states index) "primary" "default") :disabled (not (toggles index))
-                                    :onClick #(dispatch [dispatch-key index])} name])]
     [:div.form-group
      [:label label]
      [bs/button-toolbar
-      (map-indexed create-button spieler)]]))
+      (for [[index name] (map vector (range) spieler)]
+        [bs/button {:key     index
+                    :bsStyle (if (states index) "primary" "default")
+                    :disabled (not (toggles index))
+                    :onClick #(dispatch [dispatch-key index])} name])]])
 
 
 (defn- bockrunden [value]

@@ -26,14 +26,12 @@
           [:div.form-group
            [:label.checkbox-inline
             [:input {:type     "checkbox"
-                     :value    4
                      :checked  vierspieler
-                     :onChange #(dispatch [:fuenf-spieler-modus false])} "4 Spieler"]]
+                     :onChange #(dispatch [:fuenf-spieler-modus false])}]  "4 Spieler"]
            [:label.checkbox-inline
             [:input {:type     "checkbox"
-                     :value    5
                      :checked  fuenfspieler
-                     :onChange #(dispatch [:fuenf-spieler-modus true])} "5 Spieler"]]]
+                     :onChange #(dispatch [:fuenf-spieler-modus true])}] "5 Spieler"]]
           [:div.form-inline.form-group
            (map-indexed spieler-name spielernames)]
           [:div

@@ -6,22 +6,22 @@
 
   :min-lein-version "2.5.3"
 
-  :dependencies [[org.clojure/clojure "1.7.0"]
-                 [org.clojure/clojurescript "1.7.228"]
-                 [org.clojure/core.async "0.2.374"
+  :dependencies [[org.clojure/clojure "1.8.0"]
+                 [org.clojure/clojurescript "1.9.229"]
+                 [org.clojure/core.async "0.2.395"
                   :exclusions [org.clojure/tools.reader]]
-                 [reagent "0.5.1"]
-                 [re-frame "0.7.0-alpha-2"]
-                 [prismatic/schema "1.0.5"]
-                 [cljsjs/react-bootstrap "0.28.1-0" :exclusions [org.webjars.bower/jquery]]]
+                 [reagent "0.6.0"]
+                 [re-frame "0.7.0"]
+                 [prismatic/schema "1.1.3"]
+                 [cljsjs/react-bootstrap "0.30.7-0" :exclusions [org.webjars.bower/jquery]]]
 
-  :plugins [[lein-figwheel "0.5.0-6"]
-            [lein-cljsbuild "1.1.2" :exclusions [[org.clojure/clojure]]]]
+  :plugins [[lein-figwheel "0.5.9"]
+            [lein-cljsbuild "1.1.5" :exclusions [[org.clojure/clojure]]]]
 
   :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
 
   :profiles {:dev {:dependencies [[com.cemerick/piggieback "0.2.1"]
-                                  [figwheel-sidecar "0.5.0-5"]]}}
+                                  [figwheel-sidecar "0.5.9"]]}}
 
   :source-paths ["src",,"scripts"]
 

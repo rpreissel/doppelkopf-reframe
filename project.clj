@@ -10,8 +10,7 @@
                  [org.clojure/clojurescript "1.9.229"]
                  [org.clojure/core.async "0.2.395"
                   :exclusions [org.clojure/tools.reader]]
-                 [reagent "0.6.0"]
-                 [re-frame "0.7.0"]
+                 [re-frame "0.9.2"]
                  [prismatic/schema "1.1.3"]
                  [cljsjs/react-bootstrap "0.30.7-0" :exclusions [org.webjars.bower/jquery]]]
 

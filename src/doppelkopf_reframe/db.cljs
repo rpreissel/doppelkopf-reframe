@@ -2,11 +2,9 @@
   (:require-macros [reagent.ratom :refer [reaction]])
   (:require [clojure.set :as set]
             [reagent.core :as reagent :refer [atom]]
-            [re-frame.core :refer [register-handler
-                                   register-sub
-                                   dispatch
+            [re-frame.core :refer [reg-event-db
+                                   reg-sub
                                    after
-                                   dispatch-sync
                                    subscribe]]
             [cljs.reader]
             [schema.core :as s :include-macros true]))
@@ -149,8 +147,8 @@
   (let [s (count v)]
     (when (pos? s) (nth v (dec s)))))
 
-(defn aktuelle-bockrunden [db]
-  (let [last-spiel (vlast (:spiele db))]
+(defn aktuelle-bockrunden [spiele]
+  (let [last-spiel (vlast spiele)]
     (if last-spiel (:aktuelle-bockrunden last-spiel) [0 0])))
 
 (defn- berechne-neue-bockrunden [[bis-doppel bis-einzel] neue-bockrunden fuenf solospiel]
@@ -202,22 +200,23 @@
    :abrechenbar     true,
    :bockrunden      (:bockrunden s)})
 
+;Test
 (defn spiel-abrechnen [db]
   (let [spieleingabe (:spieleingabe db)
         neues-spiel (spieleingabe->spiel spieleingabe)
         solospiel (not= (count (:gewinner neues-spiel)) 2)
         bockrunden (:bockrunden neues-spiel)
         fuenfspieler (get-in db [:spieler :fuenf])
-        bisherige-aktuelle-bockrunden (aktuelle-bockrunden db)
+        bisherige-aktuelle-bockrunden (aktuelle-bockrunden (:spiele db))
         neue-aktuelle-bockrunden (berechne-neue-bockrunden bisherige-aktuelle-bockrunden bockrunden fuenfspieler solospiel)
         neues-spiel-mit-bockrunden (assoc neues-spiel :aktuelle-bockrunden neue-aktuelle-bockrunden)]
     (-> db
         (update :spiele conj neues-spiel-mit-bockrunden)
         (assoc :spieleingabe (if fuenfspieler initialStateFuenfSpieler initialStateVierSpieler)))))
 
-(defn add-punkte [spiele]
+(defn spielstand [spiele fuenf-spieler]
   (loop [result []
-         last-punkte [0 0 0 0 0]
+         last-punkte (if fuenf-spieler [0 0 0 0 0] [0 0 0 0])
          [head & rest] spiele]
     (if head
       (let [new-last-punkte (map + last-punkte (:punkte head))]
@@ -233,65 +232,62 @@
         (assoc :spiele spiele)
         (update-aussetzer-toggle-und-abrechenbar-state))))
 
-(defn spielstand [db]
-  (add-punkte (:spiele db)))
-
 (defn init-db []
   (if-let [storage (ls->state)]
     storage
     default-db))
 
-(register-handler
+(reg-event-db
   :init-db
   check-schema-mw
   (fn [_ _]
     (init-db)))
 
-(register-handler
+(reg-event-db
   :fuenf-spieler-modus
   doppelkopf-middleware
   (fn [db [_ fuenfspieler]]
     (println "fuenfspieler: " fuenfspieler)
     (toggle-fuenf-spieler-modus db fuenfspieler)))
 
-(register-handler
+(reg-event-db
   :spieler-name
   doppelkopf-middleware
   (fn [db [_ index name]]
     (assoc-in db [:spieler :names index] name)))
 
-(register-handler
+(reg-event-db
   :toggle-gewinner
   doppelkopf-middleware
   (fn [db [_ spieler]]
     (toggle-gewinner db spieler)))
 
-(register-handler
+(reg-event-db
   :toggle-aussetzer
   doppelkopf-middleware
   (fn [db [_ spieler]]
     (toggle-aussetzer db spieler)))
 
 
-(register-handler
+(reg-event-db
   :add-bockrunde
   doppelkopf-middleware
   (fn [db _]
     (add-bockrunde db)))
 
-(register-handler
+(reg-event-db
   :reset-bockrunden
   doppelkopf-middleware
   (fn [db _]
     (reset-bockrunden db)))
 
-(register-handler
+(reg-event-db
   :set-spielwert
   doppelkopf-middleware
   (fn [db [_ value]]
     (set-spielwert db value)))
 
-(register-handler
+(reg-event-db
   :spiel-abrechnen
   doppelkopf-middleware
   (fn [db _]
@@ -299,13 +295,13 @@
       (println "spiele:" (:spiele new-db))
       new-db)))
 
-(register-handler
+(reg-event-db
   :letztes-spiel-aendern
   doppelkopf-middleware
   (fn [db _]
     (letztes-spiel-aendern db)))
 
-(register-handler
+(reg-event-db
   :delete-ls
   doppelkopf-middleware
   (fn [db _]
@@ -313,38 +309,52 @@
 
 
 
-(register-sub
+(reg-sub
   :spieler
-  (fn [db]
-    (reaction
-      (:spieler @db))))
+  (fn [db [_]]
+    (:spieler db)))
 
-(register-sub
+(reg-sub
+  :spiele
+  (fn [db [_]]
+    (:spiele db)))
+
+(reg-sub
+  :fuenf
+  (fn [db [_]]
+    (get-in db [:spieler :fuenf])))
+
+(reg-sub
+  :names
+  (fn [db [_]]
+    (get-in db [:spieler :names])))
+
+(reg-sub
   :spieler-names
-  (fn [db]
-    (reaction
-      (let [fuenf (get-in @db [:spieler :fuenf])
-            names (get-in @db [:spieler :names])]
-        (if fuenf names (butlast names))))))
+  :<- [:fuenf]
+  :<- [:names]
+  (fn [[fuenf names] [_]]
+     (if fuenf names (butlast names))))
 
 
-(register-sub
+(reg-sub
   :spieleingabe
-  (fn [db]
-    (reaction
-      (:spieleingabe @db))))
+  (fn [db [_]]
+    (:spieleingabe db)))
 
-(register-sub
+(reg-sub
   :aktuelle-bockrunden
-  (fn [db]
-    (reaction
-      (aktuelle-bockrunden @db))))
+  :<- [:spiele]
+  (fn [spiele [_]]
+    (aktuelle-bockrunden spiele)))
 
-(register-sub
+(reg-sub
   :spielstand
-  (fn [db]
-    (reaction
-      (spielstand @db))))
+  :<- [:spiele]
+  :<- [:fuenf]
+  (fn [[spiele fuenf] [_]]
+    (spielstand spiele fuenf)))
+
 
 
 
@@ -373,7 +383,7 @@
 
   (lazy-test 3)
 
-  (add-punkte [{:punkte [1 1 1 1 1]} {:punkte [1 1 1 1 1]}])
+  (spielstand [{:punkte [1 1 1 1 1]} {:punkte [1 1 1 1 1]}])
 
   (spiel->spieleingabe {
                         :gewinner   #{0 1}
@@ -394,4 +404,6 @@
     default-db)
 
   (-> [true true false false] (frequencies) (get true))
+
+  (map drop-last [[1 2 3 4 5]])
   )

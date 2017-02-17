@@ -1,21 +1,20 @@
 (ns doppelkopf-reframe.spielverlauf
-  (:require [re-frame.core :refer [register-handler
-                                   register-sub
-                                   dispatch
+  (:require [re-frame.core :refer [dispatch
                                    subscribe]]
             [reagent.core :as reagent :refer [as-element]]
-            [doppelkopf-reframe.bootstrap :as bs]))
+            [doppelkopf-reframe.bootstrap :as bs]
+            [doppelkopf-reframe.util :refer [listen]]))
 
 
 (defn- spielerbuttons [label spieler states toggles dispatch-key]
-    [:div.form-group
-     [:label label]
-     [bs/button-toolbar
-      (for [[index name] (map vector (range) spieler)]
-        [bs/button {:key     index
-                    :bsStyle (if (states index) "primary" "default")
-                    :disabled (not (toggles index))
-                    :onClick #(dispatch [dispatch-key index])} name])]])
+  [:div.form-group
+   [:label label]
+   [bs/button-toolbar
+    (for [[index name] (map vector (range) spieler)]
+      [bs/button {:key      index
+                  :bsStyle  (if (states index) "primary" "default")
+                  :disabled (not (toggles index))
+                  :onClick  #(dispatch [dispatch-key index])} name])]])
 
 
 (defn- bockrunden [value]
@@ -47,7 +46,7 @@
 
 
 
-(defn- spieleingabe [spieler spieleingabe mit-aussetzer]
+(defn- spieleingaben [spieler spieleingabe mit-aussetzer]
   [:div
    [spielerbuttons "Gewinner" spieler (:gewinner spieleingabe) (:toggleGewinner spieleingabe) :toggle-gewinner]
    (when mit-aussetzer
@@ -76,39 +75,35 @@
       (map-indexed create-row spielstand)]]))
 
 
-(defn spielverlauf
-  []
-  (let [spieler-names-rx (subscribe [:spieler-names])
-        spieleingabe-rx (subscribe [:spieleingabe])
-        aktuelle-bockrunden-rx (subscribe [:aktuelle-bockrunden])
-        spielstand-rx (subscribe [:spielstand])]
-    (fn []
-      (let [mit-aussetzer (some identity (:toggleAussetzer @spieleingabe-rx))
-            [doppelbockspiele bockspiele] @aktuelle-bockrunden-rx
-            eingabe-titel (cond
-                            (> doppelbockspiele 0) (str "Eingabe (" doppelbockspiele " Doppelbock- / " bockspiele " Bockspiele)")
-                            (> bockspiele 0) (str "Eingabe (" bockspiele " Bockspiele)")
-                            :else "Eingabe")
-            eingabe-style (cond
-                            (> doppelbockspiele 0) "danger"
-                            (> bockspiele 0) "warning"
-                            :else "info")]
-        [:div
-         [bs/panel {:header (as-element [:h3 "Aktionen"]) :bsStyle "info"}
-          [bs/button-toolbar
-           [bs/button {:bsStyle "primary" :disabled (empty? @spielstand-rx) :onClick #(dispatch [:letztes-spiel-aendern])} "Letztes Spiel ändern"]
-           [bs/button {:bsStyle "primary" :onClick #(dispatch [:route-to :spielerauswahl])} "Einstellungen"]
-           ]]
-         [bs/panel {:header (as-element [:h3 eingabe-titel]) :bsStyle eingabe-style}
-          [:div [spieleingabe @spieler-names-rx @spieleingabe-rx mit-aussetzer]]
-          ]
-         [bs/panel {:header (as-element [:h3 "Spielverlauf"]) :bsStyle "info"}
-          [:div [ergebnistabelle @spieler-names-rx @spielstand-rx]]
-          ]
-         ]
-        )
-      )
-    ))
+(defn spielverlauf  []
+  (let [spieler-names (listen [:spieler-names])
+        spieleingabe (listen [:spieleingabe])
+        [doppelbockspiele bockspiele] (listen [:aktuelle-bockrunden])
+        spielstand (listen [:spielstand])
+        mit-aussetzer (listen [:fuenf])
+        eingabe-titel (cond
+                        (> doppelbockspiele 0) (str "Eingabe (" doppelbockspiele " Doppelbock- / " bockspiele " Bockspiele)")
+                        (> bockspiele 0) (str "Eingabe (" bockspiele " Bockspiele)")
+                        :else "Eingabe")
+        eingabe-style (cond
+                        (> doppelbockspiele 0) "danger"
+                        (> bockspiele 0) "warning"
+                        :else "info")]
+    [:div
+     [bs/panel {:header (as-element [:h3 "Aktionen"]) :bsStyle "info"}
+      [bs/button-toolbar
+       [bs/button {:bsStyle "primary" :disabled (empty? spielstand) :onClick #(dispatch [:letztes-spiel-aendern])} "Letztes Spiel ändern"]
+       [bs/button {:bsStyle "primary" :onClick #(dispatch [:route-to :spielerauswahl])} "Einstellungen"]
+       ]]
+     [bs/panel {:header (as-element [:h3 eingabe-titel]) :bsStyle eingabe-style}
+      [:div [spieleingaben spieler-names spieleingabe mit-aussetzer]]
+      ]
+     [bs/panel {:header (as-element [:h3 "Spielverlauf"]) :bsStyle "info"}
+      [:div [ergebnistabelle spieler-names spielstand]]
+      ]
+     ]
+    )
+  )
 
 
 (comment

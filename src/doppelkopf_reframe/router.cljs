@@ -1,19 +1,17 @@
 (ns doppelkopf-reframe.router
-  (:require-macros [reagent.ratom :refer [reaction]])
-  (:require [re-frame.core :refer [register-handler
-                                   register-sub
-                                   subscribe]]))
+  (:require [re-frame.core :refer [reg-event-db
+                                   reg-sub]]
+            [doppelkopf-reframe.util :refer [listen]]))
 
 
-(register-sub
+(reg-sub
   :route
-  (fn [db]
-    (reaction
-      (if-let [route (:route @db)]
-        route
-        :default))))
+  (fn [db [_]]
+    (if-let [route (:route db)]
+      route
+      :default)))
 
-(register-handler
+(reg-event-db
   :route-to
   (fn [db [_ route]]
     (assoc db :route route)))
@@ -21,10 +19,9 @@
 
 (defn route-panel
   [routes]
-  (let [route-key (subscribe [:route])]
-    (fn [routes]
-      (let [raw-route (@route-key routes)
-            route (if (keyword? raw-route)
-                    (raw-route routes)
-                    raw-route)]
-        route))))
+  (let [route-key (listen [:route])
+        raw-route (route-key routes)
+        route (if (keyword? raw-route)
+                (raw-route routes)
+                raw-route)]
+    route))

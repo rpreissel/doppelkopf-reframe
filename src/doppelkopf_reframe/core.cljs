@@ -1,13 +1,7 @@
 (ns doppelkopf-reframe.core
-  (:require-macros [reagent.ratom :refer [reaction]])
-  (:require [reagent.core :as reagent :refer [atom]]
-            [re-frame.core :refer [register-handler
-                                   path
-                                   register-sub
-                                   dispatch
-                                   dispatch-sync
-                                   subscribe]]
-            [doppelkopf-reframe.router :as router :refer [route-panel]]
+  (:require [re-frame.core :refer [dispatch-sync]]
+            [reagent.core :as reagent]
+            [doppelkopf-reframe.router :refer [route-panel]]
             [doppelkopf-reframe.bootstrap :as bs]
             [doppelkopf-reframe.spielerauswahl :refer [spielerauswahl]]
             [doppelkopf-reframe.spielverlauf :refer [spielverlauf]]
@@ -24,16 +18,16 @@
    :spielverlauf   [spielverlauf]
    :default        :init})
 
-(defn hello-world []
+(defn doppelkopf []
   [:div.container-fluid
    [bs/page-header "Doppelkopf-App"]
    [route-panel routes]])
 
 
-(dispatch [:init-db])
+(dispatch-sync [:init-db])
 
 
-(reagent/render-component [hello-world]
+(reagent/render [doppelkopf]
                           (. js/document (getElementById "app")))
 
 
